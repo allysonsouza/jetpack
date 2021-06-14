@@ -1,0 +1,102 @@
+/**
+ * External dependencies
+ */
+import React from 'react';
+import { Provider } from 'react-redux';
+import { pickBy } from 'lodash';
+
+/**
+ * WordPress dependencies
+ */
+import { __ } from '@wordpress/i18n';
+
+/**
+ * Internal dependencies
+ */
+import SearchApp from '../../../../../../modules/search/instant-search/components/search-app';
+import store from '../../../../../../modules/search/instant-search/store';
+import { buildFilterAggregations } from '../../../../../../modules/search/instant-search/lib/api';
+import { SERVER_OBJECT_NAME } from '../../../../../../modules/search/instant-search/lib/constants';
+import { getThemeOptions } from '../../../../../../modules/search/instant-search/lib/dom';
+import useSiteLoadingState from '../../hooks/use-loading-state';
+import useSearchOptions from '../../hooks/use-search-options';
+import './styles.scss';
+
+// eslint-disable-next-line no-undef
+__webpack_public_path__ = window.JetpackInstantSearchOptions.webpackPublicPath;
+
+/**
+ * Component for wrapping Jetpack Instant Search application.
+ *
+ * @returns {React.Element} component instance
+ */
+export default function AppWrapper() {
+	const {
+		color,
+		infiniteScroll,
+		resultFormat,
+		showLogo,
+		sort,
+		sortEnabled,
+		theme,
+		trigger,
+	} = useSearchOptions();
+
+	const overlayOptions = {
+		// Only use defined values for preview.
+		// This ensures that we don't override existing overlayOptions with undefined ones in SearchApp.
+		...pickBy(
+			{
+				colorTheme: theme,
+				enableInfScroll: infiniteScroll,
+				enableSort: sortEnabled,
+				highlightColor: color,
+				overlayTrigger: trigger,
+				resultFormat,
+				showPoweredBy: showLogo,
+				defaultSort: sort,
+			},
+			value => typeof value !== 'undefined'
+		),
+	};
+	const { isLoading } = useSiteLoadingState();
+
+	const props = {
+		aggregations: buildFilterAggregations( [
+			...window[ SERVER_OBJECT_NAME ].widgets,
+			...window[ SERVER_OBJECT_NAME ].widgetsOutsideOverlay,
+		] ),
+		defaultSort: window[ SERVER_OBJECT_NAME ].defaultSort,
+		hasOverlayWidgets: !! window[ SERVER_OBJECT_NAME ].hasOverlayWidgets,
+		options: window[ SERVER_OBJECT_NAME ],
+		initialOverlayOptions: window[ SERVER_OBJECT_NAME ].overlayOptions,
+		overlayOptions,
+		themeOptions: getThemeOptions( window[ SERVER_OBJECT_NAME ] ),
+	};
+
+	return (
+		<div className="jp-search-customize-app-wrapper">
+			{ isLoading ? (
+				<img
+					class="jp-search-customize-loading-spinner"
+					width="32"
+					height="32"
+					alt={ __( 'Loading', 'jetpack' ) }
+					src="//en.wordpress.com/i/loading/loading-64.gif"
+				/>
+			) : (
+				<Provider store={ store }>
+					<SearchApp
+						enableAnalytics={ false }
+						initialIsVisible={ true }
+						initialShowResults={ true }
+						isInCustomizer={ false }
+						shouldCreatePortal={ false }
+						shouldIntegrateWithDom={ false }
+						{ ...props }
+					/>
+				</Provider>
+			) }
+		</div>
+	);
+}
