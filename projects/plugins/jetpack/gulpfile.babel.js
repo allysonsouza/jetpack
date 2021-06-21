@@ -34,6 +34,19 @@ gulp.task( 'blocks:watch', function () {
 	} );
 } );
 
+gulp.task( 'carousel:watch', function () {
+	const child = require( 'child_process' ).execFile( 'pnpm', [
+		'run',
+		'build-carousel',
+		'--',
+		'--watch',
+	] );
+
+	child.stdout.on( 'data', function ( data ) {
+		log( data.toString() );
+	} );
+} );
+
 gulp.task( 'search:watch', function () {
 	const child = require( 'child_process' ).execFile( 'pnpm', [
 		'run',
@@ -78,6 +91,7 @@ gulp.task(
 		sass_watch_packages,
 		'old-styles:watch',
 		'blocks:watch',
+		'carousel:watch',
 		'search:watch'
 	)
 );
