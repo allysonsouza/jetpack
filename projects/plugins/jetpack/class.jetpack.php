@@ -2666,34 +2666,23 @@ class Jetpack {
 	 * plugins on the WordPress plugins page.
 	 */
 	public static function get_module( $module ) {
-		$headers = array(
-			'name'                      => 'Module Name',
-			'description'               => 'Module Description',
-			'sort'                      => 'Sort Order',
-			'recommendation_order'      => 'Recommendation Order',
-			'introduced'                => 'First Introduced',
-			'changed'                   => 'Major Changes In',
-			'deactivate'                => 'Deactivate',
-			'free'                      => 'Free',
-			'requires_connection'       => 'Requires Connection',
-			'requires_user_connection'  => 'Requires User Connection',
-			'auto_activate'             => 'Auto Activate',
-			'module_tags'               => 'Module Tags',
-			'feature'                   => 'Feature',
-			'additional_search_queries' => 'Additional Search Queries',
-			'plan_classes'              => 'Plans',
-		);
-
 		static $modules_details;
+
 		$file = self::get_module_path( self::get_module_slug( $module ) );
 
 		if ( isset( $modules_details[ $module ] ) ) {
 			$mod = $modules_details[ $module ];
 		} else {
+			$mod = jetpack_get_module_info( $module );
 
-			$mod = self::get_file_data( $file, $headers );
 			if ( empty( $mod['name'] ) ) {
-				return false;
+				// Try to get the module info from the file as a fallback.
+				$mod = self::get_file_data( $file, jetpack_get_all_module_header_names() );
+
+				if ( empty( $mod['name'] ) ) {
+					// No info for this module.
+					return false;
+				}
 			}
 
 			$mod['sort']                     = empty( $mod['sort'] ) ? 10 : (int) $mod['sort'];
@@ -2709,7 +2698,7 @@ class Jetpack {
 				$mod['auto_activate'] = (string) $mod['auto_activate'];
 			}
 
-			if ( $mod['module_tags'] ) {
+			if ( ! empty( $mod['module_tags'] ) ) {
 				$mod['module_tags'] = explode( ',', $mod['module_tags'] );
 				$mod['module_tags'] = array_map( 'trim', $mod['module_tags'] );
 				$mod['module_tags'] = array_map( array( __CLASS__, 'translate_module_tag' ), $mod['module_tags'] );
@@ -2717,14 +2706,14 @@ class Jetpack {
 				$mod['module_tags'] = array( self::translate_module_tag( 'Other' ) );
 			}
 
-			if ( $mod['plan_classes'] ) {
+			if ( ! empty( $mod['plan_classes'] ) ) {
 				$mod['plan_classes'] = explode( ',', $mod['plan_classes'] );
 				$mod['plan_classes'] = array_map( 'strtolower', array_map( 'trim', $mod['plan_classes'] ) );
 			} else {
 				$mod['plan_classes'] = array( 'free' );
 			}
 
-			if ( $mod['feature'] ) {
+			if ( ! empty( $mod['feature'] ) ) {
 				$mod['feature'] = explode( ',', $mod['feature'] );
 				$mod['feature'] = array_map( 'trim', $mod['feature'] );
 			} else {
